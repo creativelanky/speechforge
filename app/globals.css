@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Supabase dark surfaces */
+  --color-bg-default: #0f0f0f;
+  --color-bg-surface: #1a1a1a;
+  --color-bg-surface-200: #242424;
+  --color-bg-surface-300: #2a2a2a;
+
+  /* Borders */
+  --color-border: rgba(255,255,255,0.08);
+  --color-border-strong: rgba(255,255,255,0.15);
+
+  /* Text */
+  --color-fg-default: #ededed;
+  --color-fg-muted: #a0a0a0;
+  --color-fg-subtle: #6b6b6b;
+
+  /* Supabase brand green */
+  --color-brand: #3ECF8E;
+  --color-brand-hover: #2db77c;
+  --color-brand-muted: rgba(62,207,142,0.12);
+  --color-brand-border: rgba(62,207,142,0.3);
+
+  /* Status */
+  --color-red: #E5484D;
+  --color-red-muted: rgba(229,72,77,0.12);
+  --color-yellow: #F5A623;
+  --color-yellow-muted: rgba(245,166,35,0.12);
+  --color-green: #3ECF8E;
+  --color-green-muted: rgba(62,207,142,0.12);
+  --color-blue: #3B82F6;
+  --color-blue-muted: rgba(59,130,246,0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #080808;
+  color: #ededed;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #080808;
+  color: #ededed;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, textarea {
+  font-family: inherit;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes typingBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes mascotRing {
+  0%, 100% { transform: scale(1); opacity: 0.06; }
+  50% { transform: scale(1.04); opacity: 0.12; }
+}
+
+.animate-fade-in { animation: fadeIn 0.2s ease; }
+.animate-fade-up { animation: fadeUp 0.3s ease; }
+.animate-slide-left { animation: slideInLeft 0.3s ease; }
+.animate-scale-in { animation: scaleIn 0.2s ease; }
+.animate-spin { animation: spin 0.8s linear infinite; }
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }

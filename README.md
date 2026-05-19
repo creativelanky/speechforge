@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SpeechForge
 
-## Getting Started
+AI-powered speech coaching platform. Practice interviews, public speaking, and conversations with real-time AI coaching, then get detailed performance scores.
 
-First, run the development server:
+## Stack
+
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **Styling**: Tailwind CSS v4 — iOS design language
+- **Database**: Supabase (Postgres + Auth + RLS)
+- **AI**: Anthropic Claude (`claude-sonnet-4-20250514`) — streaming conversations + scoring
+- **Voice**: Web Speech API (STT + TTS)
+- **Deployment**: Vercel
+
+## Setup
+
+### 1. Supabase
+
+Create a Supabase project, then run the migration and seed files:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# In the Supabase SQL editor, run:
+supabase/migrations/001_schema.sql
+supabase/seed.sql
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Also enable **Google OAuth** in Supabase → Auth → Providers if you want Google sign-in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in `.env.local`:
 
-## Learn More
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run locally
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open `http://localhost:3000`.
 
-## Deploy on Vercel
+## App Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/
+  (auth)/login        — Email/password + Google + magic link
+  (auth)/signup       — Account creation
+  onboarding/         — 4-step first-run flow (goal, level, name)
+  (app)/home          — Dashboard with stats and recent sessions
+  (app)/practice/     — Mode + scenario selection
+  session/[id]        — Live AI coaching session (streaming + voice)
+  results/[id]        — Score ring, breakdown, and feedback
+  (app)/history       — Filterable session history
+  (app)/profile       — Settings, stats, sign out
+  api/chat            — Claude streaming SSE endpoint
+  api/score           — Claude scoring endpoint
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Key Technical Notes
+
+- **Voice input**: Web Speech API — Chrome/Edge only. Safari shows text-only fallback.
+- **Streaming**: Claude responses stream token-by-token via SSE from `/api/chat`.
+- **Scoring**: Full conversation POSTed to `/api/score` after session ends; scores persisted to DB.
+- **Auth protection**: `proxy.ts` (Next.js 16 proxy convention) redirects unauthenticated users; onboarding gate checks `profiles.onboarding_complete`.
+- **RLS**: All session data is row-level secured to `auth.uid()`.
+- **iOS design**: System font stack, `#F2F2F7` grouped backgrounds, no shadows — separators only, 12px card radius, 14px button radius, 44px min tap targets.
