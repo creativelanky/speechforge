@@ -215,7 +215,7 @@ export default function SessionPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-mono text-[#E5484D] font-medium">{formatDuration(elapsed)}</span>
-            <button onClick={() => { setVoiceEnabled(v => !v); if (voiceEnabled) stopSpeakingFn() }} className="text-[#6b6b6b] hover:text-[#ededed] transition-colors">
+            <button onClick={() => { unlockAudio(); setVoiceEnabled(v => !v); if (voiceEnabled) stopSpeakingFn() }} className="text-[#6b6b6b] hover:text-[#ededed] transition-colors">
               {voiceEnabled ? <SpeakerHigh size={17} weight="duotone" /> : <SpeakerSlash size={17} weight="duotone" />}
             </button>
             <button

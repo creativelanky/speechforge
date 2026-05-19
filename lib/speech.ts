@@ -1,106 +1,97 @@
 'use client'
 
-// ── Audio Context (unlocked once by user tap — works on iOS) ─────────────────
+// ── TTS via Groq API ──────────────────────────────────────────────────────────
+//
+// iOS Safari blocks audio.play() from async code (after a fetch).
+// Fix: create ONE Audio element and call .play() on it from the user's tap
+// gesture (unlockAudio). iOS then allows .play() on that same element later,
+// even from async code.  Never null _player — losing the reference loses the unlock.
 
-let _ctx: AudioContext | null = null
-let _source: AudioBufferSourceNode | null = null
-let _sourceStartTime = 0
-let _sourceDuration = 0
-let _audioEl: HTMLAudioElement | null = null
-let _onEndCallback: (() => void) | null = null
+let _player: HTMLAudioElement | null = null
+let _currentBlobUrl: string | null = null
 
+// 1-sample silent WAV — valid audio iOS will accept to unlock the element
+const SILENT_WAV =
+  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
+
+// Call synchronously inside a user tap/click handler BEFORE any async work
 export function unlockAudio(): void {
   if (typeof window === 'undefined') return
-  if (!_ctx) {
-    _ctx = new ((window as any).AudioContext || (window as any).webkitAudioContext)()
+  if (_player) {
+    // Already unlocked — just ensure it isn't stuck
+    if (_player.paused && _player.src === SILENT_WAV) {
+      _player.play().catch(() => {})
+    }
+    return
   }
-  if (_ctx!.state === 'suspended') {
-    _ctx!.resume().catch(() => {})
-  }
+  _player = new Audio()
+  _player.src = SILENT_WAV
+  _player.play().catch(() => {})
 }
 
 function speakBrowser(text: string, onEnd?: () => void): void {
-  const synth = window.speechSynthesis
-  synth.cancel()
-  const utter = new SpeechSynthesisUtterance(text)
-  utter.onend = () => onEnd?.()
-  utter.onerror = () => onEnd?.()
-  setTimeout(() => synth.speak(utter), 80)
+  window.speechSynthesis?.cancel()
+  const u = new SpeechSynthesisUtterance(text)
+  u.onend = () => onEnd?.()
+  u.onerror = () => onEnd?.()
+  setTimeout(() => window.speechSynthesis?.speak(u), 80)
 }
 
 export async function speak(text: string, onEnd?: () => void): Promise<void> {
+  stopSpeaking()
   try {
-    stopSpeaking()
-    _onEndCallback = onEnd ?? null
-
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
-    if (!res.ok) { speakBrowser(text, onEnd); return }
+    if (!res.ok) throw new Error(`TTS ${res.status}`)
 
-    const arrayBuffer = await res.arrayBuffer()
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    _currentBlobUrl = url
 
-    if (_ctx) {
-      // AudioContext path — works on iOS after unlockAudio() has been called
-      if (_ctx.state === 'suspended') await _ctx.resume()
-      const audioBuffer = await _ctx.decodeAudioData(arrayBuffer.slice(0))
-      _source = _ctx.createBufferSource()
-      _source.buffer = audioBuffer
-      _sourceDuration = audioBuffer.duration
-      _source.connect(_ctx.destination)
-      _source.onended = () => {
-        _source = null
-        const cb = _onEndCallback
-        _onEndCallback = null
-        cb?.()
-      }
-      _sourceStartTime = _ctx.currentTime
-      _source.start()
-    } else {
-      // Fallback: HTMLAudioElement (works on desktop without a prior gesture)
-      const blob = new Blob([arrayBuffer], { type: 'audio/wav' })
-      const url = URL.createObjectURL(blob)
-      _audioEl = new Audio(url)
-      _audioEl.onended = () => { URL.revokeObjectURL(url); _audioEl = null; onEnd?.() }
-      _audioEl.onerror = () => { URL.revokeObjectURL(url); _audioEl = null; onEnd?.() }
-      await _audioEl.play()
+    if (!_player) {
+      // Desktop path: no prior tap needed, create fresh element
+      _player = new Audio()
     }
-  } catch {
+
+    _player.src = url
+    _player.onended = () => {
+      if (_currentBlobUrl === url) { URL.revokeObjectURL(url); _currentBlobUrl = null }
+      onEnd?.()
+    }
+    _player.onerror = () => {
+      if (_currentBlobUrl === url) { URL.revokeObjectURL(url); _currentBlobUrl = null }
+      onEnd?.()
+    }
+    await _player.play()
+  } catch (err) {
+    console.error('[tts]', err)
     speakBrowser(text, onEnd)
   }
 }
 
 export function stopSpeaking(): void {
-  if (_source) {
-    const s = _source
-    _source = null
-    _onEndCallback = null
-    try { s.stop() } catch {}
+  if (!_player) return
+  _player.pause()
+  _player.onended = null
+  _player.onerror = null
+  if (_currentBlobUrl) {
+    URL.revokeObjectURL(_currentBlobUrl)
+    _currentBlobUrl = null
   }
-  if (_audioEl) {
-    const a = _audioEl
-    _audioEl = null
-    _onEndCallback = null
-    a.onended = null
-    a.onerror = null
-    a.pause()
-    a.src = ''
-  }
+  // DO NOT set _player = null — we must keep the unlocked element alive
 }
 
 export function getAudioProgress(): number {
-  if (_source && _ctx && _sourceDuration > 0) {
-    return Math.min((_ctx.currentTime - _sourceStartTime) / _sourceDuration, 1)
-  }
-  if (!_audioEl || !_audioEl.duration || _audioEl.duration === Infinity) return 0
-  return _audioEl.currentTime / _audioEl.duration
+  if (!_player || _player.paused || !_player.duration || _player.duration === Infinity) return 0
+  return _player.currentTime / _player.duration
 }
 
 export function isSpeechSynthesisSupported(): boolean { return true }
 
-// ── Speech-to-Text (STT via Groq Whisper) ────────────────────────────────────
+// ── STT via Groq Whisper ──────────────────────────────────────────────────────
 
 const SILENCE_THRESHOLD = 0.01
 const SILENCE_DURATION_MS = 1800
@@ -178,7 +169,6 @@ export async function startWhisperSTT(
         sum += v * v
       }
       const rms = Math.sqrt(sum / dataArr.length)
-
       if (rms > SILENCE_THRESHOLD) {
         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
       } else if (!silenceTimer) {
