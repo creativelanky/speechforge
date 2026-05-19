@@ -79,7 +79,7 @@ export default function HomePage() {
             <p className="text-xs font-bold uppercase tracking-widest text-[#555]">Start Practicing</p>
           </div>
           {modes.map(({ id, label, subtitle, icon: Icon, color }) => (
-            <Link key={id} href={`/practice/${id}`}
+            <Link key={id} href={`/practice?mode=${id}`}
               className="flex items-center gap-4 px-5 py-4 hover:bg-[rgba(255,255,255,0.03)] transition-colors group border-b border-[rgba(255,255,255,0.05)] last:border-0">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}>
                 <Icon size={18} weight="duotone" style={{ color }} />

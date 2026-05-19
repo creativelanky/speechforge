@@ -115,7 +115,7 @@ export default function OnboardingPage() {
           WebkitBackdropFilter: 'blur(24px)',
         }}>
         <div className="flex items-center gap-2.5 mb-8">
-          <Image src="/Logo.png" alt="SpeechForge" width={28} height={28} className="rounded-md" />
+          <Image src="/Logo.svg" alt="SpeechForge" width={28} height={28} className="rounded-md" />
           <span className="font-semibold text-sm text-[#ededed]">SpeechForge</span>
         </div>
         <div className="flex gap-1.5 mb-8">

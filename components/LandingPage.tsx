@@ -40,8 +40,7 @@ export function LandingPage() {
         {/* ── Navbar ── */}
         <header className="flex items-center justify-between px-4 md:px-8 h-[60px]">
           <div className="flex items-center gap-2.5">
-            <Image src="/Logo.png" alt="SpeechForge" width={32} height={32} className="rounded-xl" />
-            <span className="font-bold text-base tracking-tight text-white">SpeechForge</span>
+            <Image src="/Logo.svg" alt="SpeechForge" width={96} height={96} />
           </div>
 
 <div className="flex items-center gap-2">

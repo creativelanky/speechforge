@@ -22,7 +22,7 @@ export function Sidebar() {
       <aside className="hidden md:flex w-[220px] h-[calc(100vh-24px)] sticky top-3 shrink-0 flex-col rounded-2xl overflow-hidden backdrop-blur-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] m-3" style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-14 border-b border-[rgba(255,255,255,0.06)]">
-          <Image src="/Logo.png" alt="SpeechForge" width={44} height={44} className="rounded-xl shrink-0" />
+          <Image src="/Logo.svg" alt="SpeechForge" width={88} height={88} className="shrink-0" />
         </div>
 
         {/* Nav */}

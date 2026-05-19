@@ -70,7 +70,7 @@ export default function SignupPage() {
           WebkitBackdropFilter: 'blur(24px)',
         }}>
         <div className="flex items-center gap-2.5 mb-8">
-          <Image src="/Logo.png" alt="SpeechForge" width={32} height={32} className="rounded-md" />
+          <Image src="/Logo.svg" alt="SpeechForge" width={32} height={32} className="rounded-md" />
           <span className="font-semibold text-base text-[#ededed]">SpeechForge</span>
         </div>
 

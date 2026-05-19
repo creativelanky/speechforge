@@ -2,8 +2,8 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Microphone, Users, ChatCircle, ArrowUpRight, X, ChatText, UploadSimple, FileText, ArrowLeft, Heart } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/Spinner'
@@ -214,10 +214,16 @@ const inputCls = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255
 
 export default function PracticePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [activeMode, setActiveMode] = useState<string | null>(null)
   const [modalStep, setModalStep] = useState(1)
   const [starting, setStarting] = useState(false)
+
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    if (mode && modes.find(m => m.id === mode)) setActiveMode(mode)
+  }, [searchParams])
 
   // Interview fields
   const [role, setRole] = useState('')
