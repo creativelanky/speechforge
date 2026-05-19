@@ -9,6 +9,7 @@ import { ArrowRight, Microphone, Users, ChatCircle, TrendUp } from '@phosphor-ic
 import { formatDuration, formatDate, scoreColor, modeName, modeColor } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { TourTooltip } from '@/components/ui/TourTooltip'
 
 interface Profile { name: string }
 interface Session {
@@ -50,9 +51,10 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto w-full">
+    <div className="px-6 py-4 md:p-6 max-w-5xl mx-auto w-full">
+      <TourTooltip />
       {/* Header */}
-      <div className="mb-7">
+      <div id="tour-welcome" className="mb-7">
         <p className="text-sm text-[#555] mb-0.5">Good day,</p>
         <h1 className="text-3xl font-bold text-[#ededed]">{loading ? '…' : profile?.name ?? 'Friend'}</h1>
       </div>
@@ -74,7 +76,7 @@ export default function HomePage() {
       {/* Main bento row */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3">
         {/* Practice modes */}
-        <Card className="overflow-hidden">
+        <Card id="tour-practice" className="overflow-hidden">
           <div className="px-5 py-4 border-b border-[rgba(255,255,255,0.07)]">
             <p className="text-xs font-bold uppercase tracking-widest text-[#555]">Start Practicing</p>
           </div>
@@ -94,7 +96,7 @@ export default function HomePage() {
         </Card>
 
         {/* Recent sessions */}
-        <Card className="overflow-hidden">
+        <Card id="tour-sessions" className="overflow-hidden">
           <div className="px-5 py-4 border-b border-[rgba(255,255,255,0.07)]">
             <p className="text-xs font-bold uppercase tracking-widest text-[#555]">Recent Sessions</p>
           </div>

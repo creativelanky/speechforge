@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Microphone, Users, ChatCircle, ArrowUpRight, X, ChatText, UploadSimple, FileText, ArrowLeft, Heart } from '@phosphor-icons/react'
@@ -212,7 +212,7 @@ const inputCls = "w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function PracticePage() {
+function PracticePageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -742,5 +742,13 @@ export default function PracticePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PracticePage() {
+  return (
+    <Suspense>
+      <PracticePageInner />
+    </Suspense>
   )
 }
