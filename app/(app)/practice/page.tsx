@@ -330,7 +330,7 @@ function PracticePageInner() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto w-full">
+    <div className="px-4 py-4 md:p-6 max-w-4xl mx-auto w-full">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-[#ededed] mb-1">Practice</h1>
         <p className="text-base text-[#555]">Pick a mode and we'll build a session around you.</p>

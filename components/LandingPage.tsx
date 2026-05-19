@@ -39,10 +39,7 @@ export function LandingPage() {
 
         {/* ── Navbar ── */}
         <header className="flex items-center justify-between px-4 md:px-8 h-[60px]">
-          <div style={{ width: 146, height: 96, overflow: 'hidden', flexShrink: 0 }}>
-            <Image src="/Logo.svg" alt="SpeechForge" width={519} height={236}
-              style={{ height: 96, width: 'auto', maxWidth: 'none' }} />
-          </div>
+          <Image src="/Logo.svg" alt="SpeechForge" width={64} height={64} />
 
 <div className="flex items-center gap-2">
             <Link href="/login"

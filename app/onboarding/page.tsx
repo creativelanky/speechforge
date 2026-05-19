@@ -115,10 +115,7 @@ export default function OnboardingPage() {
           WebkitBackdropFilter: 'blur(24px)',
         }}>
         <div className="flex items-center gap-2.5 mb-8">
-          <div style={{ width: 73, height: 40, overflow: 'hidden', flexShrink: 0 }}>
-            <Image src="/Logo.svg" alt="SpeechForge" width={519} height={236}
-              style={{ height: 40, width: 'auto', maxWidth: 'none' }} />
-          </div>
+          <Image src="/Logo.svg" alt="SpeechForge" width={36} height={36} />
         </div>
         <div className="flex gap-1.5 mb-8">
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (

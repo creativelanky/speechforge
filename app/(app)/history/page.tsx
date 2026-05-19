@@ -48,7 +48,7 @@ export default function HistoryPage() {
   const dateKeys = Object.keys(grouped)
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto w-full">
+    <div className="px-4 py-4 md:p-6 max-w-3xl mx-auto w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#ededed] mb-1">History</h1>
         <p className="text-base text-[#555]">Review your past sessions and track progress.</p>

@@ -53,7 +53,7 @@ export default function ScenarioPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
+    <div className="px-4 py-4 md:p-6 max-w-4xl mx-auto w-full flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/practice"

@@ -51,7 +51,7 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div className="px-6 py-4 md:p-6 max-w-5xl mx-auto w-full">
+    <div className="px-4 py-4 md:p-6 max-w-5xl mx-auto w-full">
       <TourTooltip />
       {/* Header */}
       <div id="tour-welcome" className="mb-7">

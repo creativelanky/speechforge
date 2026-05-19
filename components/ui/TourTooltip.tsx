@@ -149,7 +149,7 @@ export function TourTooltip() {
             left: rect.left - 6,
             width: rect.width + 12,
             height: rect.height + 12,
-            boxShadow: '0 0 0 4px rgba(62,207,142,0.6), 0 0 0 9999px rgba(0,0,0,0.45)',
+            boxShadow: '0 0 0 1.5px rgba(62,207,142,0.4), 0 0 0 9999px rgba(0,0,0,0.45)',
             borderRadius: 12,
           }} />
       )}
