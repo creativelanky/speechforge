@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { Microphone, ChatCircle, UploadSimple } from '@phosphor-icons/react'
+import { Microphone, ChatCircle, UploadSimple, ArrowRight } from '@phosphor-icons/react'
 import Image from 'next/image'
 
 export function LandingPage() {
@@ -39,8 +39,9 @@ export function LandingPage() {
 
         {/* ── Navbar ── */}
         <header className="flex items-center justify-between px-4 md:px-8 h-[60px]">
-          <div className="flex items-center gap-2.5">
-            <Image src="/Logo.svg" alt="SpeechForge" width={96} height={96} />
+          <div style={{ width: 146, height: 96, overflow: 'hidden', flexShrink: 0 }}>
+            <Image src="/Logo.svg" alt="SpeechForge" width={519} height={236}
+              style={{ height: 96, width: 'auto', maxWidth: 'none' }} />
           </div>
 
 <div className="flex items-center gap-2">
@@ -103,16 +104,18 @@ export function LandingPage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-7 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto px-4 sm:px-0">
+          <div className="mt-7 flex flex-row items-center gap-3">
             <Link href="/signup"
-              className="inline-flex w-full sm:w-auto items-center justify-center font-bold text-[15px] transition-all hover:opacity-90"
-              style={{ height: 52, padding: '0 28px', borderRadius: 12, background: '#ffffff', color: '#000000' }}>
+              className="inline-flex items-center justify-center gap-2 font-bold text-[15px] transition-all hover:opacity-90"
+              style={{ height: 50, padding: '0 24px', borderRadius: 999, background: '#ffffff', color: '#000000' }}>
               Talk to your AI
+              <ArrowRight size={16} weight="bold" />
             </Link>
             <Link href="/login"
-              className="inline-flex w-full sm:w-auto items-center justify-center font-semibold text-[15px] transition-all"
-              style={{ height: 52, padding: '0 28px', borderRadius: 12, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' }}>
+              className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] transition-all"
+              style={{ height: 50, padding: '0 24px', borderRadius: 999, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' }}>
               Get started free
+              <ArrowRight size={16} weight="bold" />
             </Link>
           </div>
 

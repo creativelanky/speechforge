@@ -68,8 +68,10 @@ export default function LoginPage() {
         }}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-8">
-          <Image src="/Logo.svg" alt="SpeechForge" width={32} height={32} className="rounded-md" />
-          <span className="font-semibold text-base text-[#ededed]">SpeechForge</span>
+          <div style={{ width: 73, height: 40, overflow: 'hidden', flexShrink: 0 }}>
+            <Image src="/Logo.svg" alt="SpeechForge" width={519} height={236}
+              style={{ height: 40, width: 'auto', maxWidth: 'none' }} />
+          </div>
         </div>
 
         <h1 className="text-xl font-semibold text-[#ededed] mb-1">Welcome back</h1>
