@@ -2,9 +2,8 @@ import Groq from 'groq-sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { SCORING_PROMPT } from '@/lib/anthropic'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! })
-
 export async function POST(req: NextRequest) {
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! })
   const { messages, scenarioType, scenarioTitle } = await req.json()
 
   if (!messages || messages.length < 2) {

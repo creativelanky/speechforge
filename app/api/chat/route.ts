@@ -1,9 +1,8 @@
 import Groq from 'groq-sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! })
-
 export async function POST(req: NextRequest) {
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! })
   const { messages, systemPrompt } = await req.json()
 
   if (!messages || !systemPrompt) {
