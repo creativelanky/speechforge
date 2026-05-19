@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useSpeech } from '@/hooks/useSpeech'
-import { getAudioProgress } from '@/lib/speech'
+import { getAudioProgress, unlockAudio } from '@/lib/speech'
 import { Waveform } from '@/components/session/Waveform'
 import { Microphone, MicrophoneSlash, PaperPlaneRight, SpeakerHigh, SpeakerSlash, X, Lightning } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/Spinner'
@@ -133,6 +133,7 @@ export default function SessionPage() {
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !scenario || streaming) return
+    unlockAudio()
     setInput('')
     stopSpeakingFn()
     setIsSpeaking(false)
@@ -183,6 +184,7 @@ export default function SessionPage() {
       awaitingTap={awaitingTap}
       scrollRef={scrollRef}
       onTap={() => {
+        unlockAudio()
         setAwaitingTap(false)
         if (scenario) sendToAI([], scenario)
       }}
@@ -332,7 +334,7 @@ function KaraokeText({ text, progress }: { text: string; progress: number }) {
   const words = text.trim().split(/\s+/)
   const currentIndex = Math.floor(progress * words.length)
   return (
-    <p className="text-2xl font-bold leading-snug tracking-tight">
+    <p className="text-base md:text-xl font-bold leading-snug tracking-tight">
       {words.map((word, i) => (
         <span
           key={i}
@@ -378,8 +380,54 @@ function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, 
 
   const card = 'rounded-3xl border border-[rgba(255,255,255,0.08)] backdrop-blur-xl bg-[rgba(255,255,255,0.04)]'
 
+  const captionBg = isSpeaking
+    ? 'linear-gradient(150deg, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0.02) 50%, rgba(0,0,0,0) 100%)'
+    : isListening
+    ? 'linear-gradient(150deg, rgba(62,207,142,0.08) 0%, rgba(62,207,142,0.02) 50%, rgba(0,0,0,0) 100%)'
+    : 'linear-gradient(150deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 100%)'
+  const captionBorder = isSpeaking
+    ? '1px solid rgba(59,130,246,0.18)'
+    : isListening
+    ? '1px solid rgba(62,207,142,0.18)'
+    : '1px solid rgba(255,255,255,0.07)'
+
+  const AgentFace = ({ size = 64 }: { size?: number }) => (
+    <div className="relative flex items-center justify-center">
+      {ringActive && (
+        <div className="absolute rounded-full animate-ping"
+          style={{ width: size * 1.5, height: size * 1.5, backgroundColor: mascotColor, opacity: 0.06 }} />
+      )}
+      <div className="absolute rounded-full transition-all duration-500"
+        style={{ width: size * 1.25, height: size * 1.25,
+          border: `1.5px solid ${ringActive ? mascotColor : 'rgba(255,255,255,0.07)'}`,
+          opacity: ringActive ? 0.4 : 1 }} />
+      <div className="relative rounded-full flex items-center justify-center transition-all duration-500"
+        style={{
+          width: size, height: size,
+          background: isSpeaking
+            ? 'radial-gradient(circle at 40% 35%, rgba(59,130,246,0.3), rgba(59,130,246,0.06))'
+            : isListening
+            ? 'radial-gradient(circle at 40% 35%, rgba(62,207,142,0.3), rgba(62,207,142,0.06))'
+            : 'radial-gradient(circle at 40% 35%, rgba(255,255,255,0.07), rgba(255,255,255,0.01))',
+          border: `1.5px solid ${isSpeaking ? 'rgba(59,130,246,0.3)' : isListening ? 'rgba(62,207,142,0.3)' : 'rgba(255,255,255,0.08)'}`,
+          boxShadow: ringActive ? `0 0 28px ${mascotColor}25` : 'none',
+        }}>
+        <svg width={size * 0.47} height={size * 0.47} viewBox="0 0 52 52" fill="none">
+          <circle cx="18" cy="22" r={isListening ? 4 : 3} fill={mascotColor} />
+          <circle cx="34" cy="22" r={isListening ? 4 : 3} fill={mascotColor} />
+          {isListening
+            ? <path d="M16 33 Q26 40 36 33" stroke={mascotColor} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            : isSpeaking
+            ? <path d="M16 33 Q21 29 26 33 Q31 37 36 33" stroke={mascotColor} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            : <path d="M18 33 Q26 38 34 33" stroke={mascotColor} strokeWidth="2" strokeLinecap="round" fill="none" />
+          }
+        </svg>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="h-screen bg-[#080808] p-3 flex gap-3 overflow-hidden relative">
+    <div className="h-screen bg-[#080808] flex flex-col md:flex-row md:p-3 md:gap-3 overflow-hidden relative">
 
       {/* Ambient orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -404,43 +452,32 @@ function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, 
         </div>
       )}
 
-      {/* ── Left column ─────────────────────────────────── */}
-      <div className="w-60 flex flex-col gap-3 shrink-0">
+      {/* ── Mobile top header (hidden on md+) ────────────── */}
+      <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-[rgba(255,255,255,0.07)] shrink-0">
+        <AgentFace size={36} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-[#ededed] leading-tight truncate">{agentName}</p>
+          <p className="text-xs font-medium transition-colors duration-300 leading-tight"
+            style={{ color: isListening ? '#3ECF8E' : isSpeaking ? '#3B82F6' : '#555' }}>
+            {statusText}
+          </p>
+        </div>
+        <span className="text-sm font-mono text-[#E5484D] shrink-0">{formatDuration(elapsed)}</span>
+        <button onClick={onToggleVoice} className="text-[#555] hover:text-[#aaa] transition-colors shrink-0">
+          {voiceEnabled ? <SpeakerHigh size={18} weight="duotone" /> : <SpeakerSlash size={18} weight="duotone" />}
+        </button>
+        <button onClick={onEnd} disabled={ending}
+          className="flex items-center gap-1 h-7 px-3 bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)] rounded-full text-xs font-medium text-[#E5484D] hover:bg-[rgba(229,72,77,0.2)] disabled:opacity-50 shrink-0">
+          {ending ? <Spinner size={11} color="#E5484D" /> : <><X size={11} weight="bold" />End</>}
+        </button>
+      </div>
+
+      {/* ── Desktop left column (hidden on mobile) ────────── */}
+      <div className="hidden md:flex flex-col gap-3 w-60 shrink-0">
 
         {/* Mascot card */}
         <div className={`${card} p-6 flex flex-col items-center gap-4`}>
-          <div className="relative flex items-center justify-center">
-            {ringActive && (
-              <div className="absolute rounded-full animate-ping"
-                style={{ width: 96, height: 96, backgroundColor: mascotColor, opacity: 0.06 }} />
-            )}
-            <div className="absolute rounded-full transition-all duration-500"
-              style={{ width: 80, height: 80,
-                border: `1.5px solid ${ringActive ? mascotColor : 'rgba(255,255,255,0.07)'}`,
-                opacity: ringActive ? 0.4 : 1 }} />
-            <div className="relative rounded-full flex items-center justify-center transition-all duration-500"
-              style={{
-                width: 64, height: 64,
-                background: isSpeaking
-                  ? 'radial-gradient(circle at 40% 35%, rgba(59,130,246,0.3), rgba(59,130,246,0.06))'
-                  : isListening
-                  ? 'radial-gradient(circle at 40% 35%, rgba(62,207,142,0.3), rgba(62,207,142,0.06))'
-                  : 'radial-gradient(circle at 40% 35%, rgba(255,255,255,0.07), rgba(255,255,255,0.01))',
-                border: `1.5px solid ${isSpeaking ? 'rgba(59,130,246,0.3)' : isListening ? 'rgba(62,207,142,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                boxShadow: ringActive ? `0 0 28px ${mascotColor}25` : 'none',
-              }}>
-              <svg width="30" height="30" viewBox="0 0 52 52" fill="none">
-                <circle cx="18" cy="22" r={isListening ? 4 : 3} fill={mascotColor} />
-                <circle cx="34" cy="22" r={isListening ? 4 : 3} fill={mascotColor} />
-                {isListening
-                  ? <path d="M16 33 Q26 40 36 33" stroke={mascotColor} strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                  : isSpeaking
-                  ? <path d="M16 33 Q21 29 26 33 Q31 37 36 33" stroke={mascotColor} strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                  : <path d="M18 33 Q26 38 34 33" stroke={mascotColor} strokeWidth="2" strokeLinecap="round" fill="none" />
-                }
-              </svg>
-            </div>
-          </div>
+          <AgentFace size={64} />
           <div className="text-center">
             <p className="text-base font-bold text-[#ededed] leading-tight">{agentName}</p>
             <p className="text-sm font-medium mt-1 transition-colors duration-300"
@@ -503,27 +540,18 @@ function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, 
         </div>
       </div>
 
-      {/* ── Right column ─────────────────────────────────── */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0">
+      {/* ── Main content area ─────────────────────────────── */}
+      <div className="flex-1 flex flex-col gap-2 md:gap-3 min-w-0 p-3 md:p-0 overflow-hidden">
 
         {/* Live caption card */}
-        <div className="rounded-3xl flex-[3] flex flex-col relative overflow-hidden"
+        <div className="rounded-2xl md:rounded-3xl flex-[2] md:flex-[3] flex flex-col relative overflow-hidden"
           style={{
-            background: isSpeaking
-              ? 'linear-gradient(150deg, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0.02) 50%, rgba(0,0,0,0) 100%)'
-              : isListening
-              ? 'linear-gradient(150deg, rgba(62,207,142,0.08) 0%, rgba(62,207,142,0.02) 50%, rgba(0,0,0,0) 100%)'
-              : 'linear-gradient(150deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 100%)',
-            border: isSpeaking
-              ? '1px solid rgba(59,130,246,0.18)'
-              : isListening
-              ? '1px solid rgba(62,207,142,0.18)'
-              : '1px solid rgba(255,255,255,0.07)',
+            background: captionBg,
+            border: captionBorder,
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
             transition: 'background 0.5s ease, border-color 0.5s ease',
           }}>
-          {/* glow orb */}
           <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full pointer-events-none transition-all duration-700"
             style={{
               background: isSpeaking
@@ -533,61 +561,81 @@ function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, 
                 : 'none',
             }} />
 
-          <div className="p-8 flex flex-col h-full relative">
-            <p className="text-xs font-bold uppercase tracking-widest mb-5 transition-colors duration-300"
+          <div className="p-5 md:p-8 flex flex-col h-full relative">
+            <p className="text-xs font-bold uppercase tracking-widest mb-3 md:mb-5 transition-colors duration-300"
               style={{ color: isSpeaking ? 'rgba(59,130,246,0.5)' : isListening ? 'rgba(62,207,142,0.5)' : 'rgba(255,255,255,0.15)' }}>
               {isSpeaking ? agentName : isListening ? 'You' : 'Live caption'}
             </p>
 
-            <div className="flex-1 flex items-center">
+            <div className="flex-1 flex items-center overflow-hidden">
               {isSpeaking && speakingText ? (
                 <KaraokeText text={speakingText} progress={karaokeProgress} />
               ) : isListening ? (
-                <p className="text-2xl font-semibold leading-snug tracking-tight">
+                <p className="text-base md:text-2xl font-semibold leading-snug tracking-tight">
                   {transcript
                     ? <span className="text-white">{transcript}</span>
                     : <span className="text-[rgba(255,255,255,0.15)]">Listening…</span>
                   }
                 </p>
               ) : isTyping || streaming ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                   {[0,1,2].map(i => (
-                    <div key={i} className="w-3 h-3 rounded-full"
+                    <div key={i} className="w-2 h-2 md:w-3 md:h-3 rounded-full"
                       style={{ background: 'rgba(255,255,255,0.2)', animation: `typingBounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                   ))}
                 </div>
               ) : (
-                <p className="text-lg text-[rgba(255,255,255,0.1)] font-medium">—</p>
+                <p className="text-base text-[rgba(255,255,255,0.1)] font-medium">—</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* History card */}
+        {/* Conversation history */}
         <div className={`${card} flex-[2] flex flex-col min-h-0`}>
-          <div className="px-6 pt-5 pb-3 shrink-0">
+          <div className="px-4 md:px-6 pt-4 md:pt-5 pb-2 md:pb-3 shrink-0">
             <p className="text-xs font-bold uppercase tracking-widest text-[#444]">Conversation</p>
           </div>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pb-5 space-y-5">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 pb-4 md:pb-5 space-y-4">
             {messages.length === 0 && (
               <p className="text-sm text-[rgba(255,255,255,0.1)] mt-4 text-center">Conversation will appear here</p>
             )}
             {messages.map((m, i) => (
-              <div key={i} className="space-y-1.5">
+              <div key={i} className="space-y-1">
                 <p className="text-xs font-bold uppercase tracking-wider"
                   style={{ color: m.role === 'user' ? 'rgba(255,255,255,0.35)' : 'rgba(62,207,142,0.5)' }}>
                   {m.role === 'user' ? 'You' : agentName}
                 </p>
-                <p className="text-sm text-[rgba(255,255,255,0.5)] leading-relaxed">
+                <p className="text-xs md:text-sm text-[rgba(255,255,255,0.5)] leading-relaxed">
                   {m.content}
                   {streaming && i === messages.length - 1 && m.role === 'assistant' && (
-                    <span className="inline-block w-1 h-3.5 bg-[#3ECF8E] ml-0.5 animate-pulse rounded-sm" />
+                    <span className="inline-block w-1 h-3 bg-[#3ECF8E] ml-0.5 animate-pulse rounded-sm" />
                   )}
                 </p>
               </div>
             ))}
-            <div className="h-2" />
+            <div className="h-1" />
           </div>
+        </div>
+
+        {/* Mobile mic bar (hidden on md+) */}
+        <div className="md:hidden flex items-center justify-center gap-5 shrink-0 py-1">
+          {supported !== false && (
+            <button onClick={onMic} disabled={streaming || isTyping || isSpeaking}
+              className={cn(
+                'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-20',
+                isListening
+                  ? 'bg-[#E5484D] shadow-[0_0_32px_rgba(229,72,77,0.45)]'
+                  : 'bg-[#1c1c1c] border border-[rgba(255,255,255,0.09)]'
+              )}>
+              {isListening
+                ? <MicrophoneSlash size={22} weight="duotone" className="text-white" />
+                : <Microphone size={22} weight="duotone" className="text-[#555]" />}
+            </button>
+          )}
+          <p className="text-xs font-medium text-[#444]">
+            {isListening ? 'Tap to stop' : 'Tap to speak'}
+          </p>
         </div>
       </div>
     </div>
