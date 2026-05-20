@@ -1,18 +1,32 @@
-import Groq from 'groq-sdk'
 import { NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
   try {
     const { text } = await req.json()
     if (!text) return NextResponse.json({ error: 'no text' }, { status: 400 })
 
-    const response = await (groq.audio.speech as any).create({
-      model: 'canopylabs/orpheus-v1-english',
-      voice: 'diana',
-      input: text,
-      response_format: 'wav',
+    const response = await fetch('https://api.groq.com/openai/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'playai-tts',
+        voice: 'Fritz-PlayAI',
+        input: text,
+        response_format: 'wav',
+      }),
     })
+
+    if (!response.ok) {
+      const err = await response.text()
+      console.error('[tts] Groq error', response.status, err)
+      return NextResponse.json({ error: err }, { status: 500 })
+    }
 
     const buffer = await response.arrayBuffer()
     return new NextResponse(buffer, {
