@@ -41,6 +41,7 @@ export default function SessionPage() {
   const startTimeRef = useRef(Date.now())
   const abortRef = useRef<AbortController>(undefined)
   const sendMessageRef = useRef<(text: string) => void>(() => {})
+  const ttsGenRef = useRef(0)
 
   const { isListening, transcript, supported, startListening, stopListening, speakText, stopSpeakingFn } = useSpeech()
 
@@ -75,6 +76,46 @@ export default function SessionPage() {
     const assistantMessage: Message = { role: 'assistant', content: '' }
     setMessages(prev => [...prev, assistantMessage])
 
+    // Sentence-by-sentence TTS: start speaking first sentence as soon as it
+    // arrives from the stream instead of waiting for the full response.
+    const gen = ++ttsGenRef.current
+    const queue: string[] = []
+    let busy = false
+    let offset = 0  // chars of fullText already fed into queue
+    let streamDone = false
+
+    const tryDrain = () => {
+      if (busy || queue.length === 0 || gen !== ttsGenRef.current) return
+      const sentence = queue.shift()!
+      busy = true
+      setIsSpeaking(true)
+      speakText(sentence, () => {
+        if (gen !== ttsGenRef.current) return
+        busy = false
+        if (queue.length > 0) { tryDrain(); return }
+        if (streamDone) { setIsSpeaking(false); setAutoListenPending(true) }
+      })
+    }
+
+    const feedText = (text: string, final: boolean) => {
+      if (!voiceEnabled || sessionMode !== 'audio') return
+      const chunk = text.slice(offset)
+      const re = /[^.!?]+[.!?]+\s*/g
+      let m: RegExpExecArray | null
+      let consumed = 0
+      while ((m = re.exec(chunk)) !== null) {
+        const s = m[0].trim()
+        if (s.length > 5) queue.push(s)
+        consumed = m.index + m[0].length
+      }
+      offset += consumed
+      if (final) {
+        const leftover = text.slice(offset).trim()
+        if (leftover.length > 0) queue.push(leftover)
+      }
+      tryDrain()
+    }
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -101,6 +142,7 @@ export default function SessionPage() {
                 if (text) {
                   fullText += text
                   setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: 'assistant', content: fullText }; return u })
+                  feedText(fullText, false)
                 }
               } catch {}
             }
@@ -108,15 +150,12 @@ export default function SessionPage() {
         }
       }
       setStreaming(false)
+      streamDone = true
 
       if (voiceEnabled && fullText) {
         if (sessionMode === 'audio') {
-          setIsSpeaking(true)
-          speakText(fullText, () => {
-            // Fires when the utterance actually finishes speaking
-            setIsSpeaking(false)
-            setAutoListenPending(true)
-          })
+          feedText(fullText, true)
+          if (!busy && queue.length === 0) setAutoListenPending(true)
         } else {
           speakText(fullText)
         }
@@ -140,6 +179,7 @@ export default function SessionPage() {
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !scenario || streaming) return
     unlockAudio()
+    ttsGenRef.current++
     setInput('')
     stopSpeakingFn()
     setIsSpeaking(false)
@@ -155,6 +195,7 @@ export default function SessionPage() {
   const handleEnd = async () => {
     if (ending) return
     setEnding(true)
+    ttsGenRef.current++
     abortRef.current?.abort()
     clearInterval(timerRef.current)
     stopSpeakingFn()
