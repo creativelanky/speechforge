@@ -16,6 +16,9 @@ let _playerUrl: string | null = null
 
 let _synthReady = false
 
+// AudioContext routes through earpiece on iOS — skip it, use HTMLAudioElement instead
+const _isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
+
 // Debug callback — set from the session page to surface errors visually on mobile
 let _debug: ((msg: string) => void) | null = null
 export function setTTSDebug(cb: ((msg: string) => void) | null) { _debug = cb }
@@ -125,8 +128,8 @@ export async function speak(text: string, onEnd?: () => void): Promise<void> {
     const arrayBuffer = await res.arrayBuffer()
     dbg(`audio ${(arrayBuffer.byteLength / 1024).toFixed(1)}kb ctx=${_ctx?.state ?? 'none'} player=${!!_player} synth=${_synthReady}`)
 
-    // ── Path 1: AudioContext ───────────────────────────────────────────────
-    if (_ctx) {
+    // ── Path 1: AudioContext (skip on iOS — routes to earpiece, not speaker) ─
+    if (_ctx && !_isIOS) {
       try {
         if (_ctx.state === 'suspended') await _ctx.resume()
         const audioBuf = await _ctx.decodeAudioData(arrayBuffer.slice(0))
