@@ -35,6 +35,7 @@ export default function SessionPage() {
   const [autoListenPending, setAutoListenPending] = useState(false)
   const [awaitingTap, setAwaitingTap] = useState(sessionMode === 'audio')
   const [ttsLog, setTtsLog] = useState<string[]>([])
+  const [speakingSentence, setSpeakingSentence] = useState('')
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout>(undefined)
@@ -88,11 +89,13 @@ export default function SessionPage() {
       if (busy || queue.length === 0 || gen !== ttsGenRef.current) return
       const sentence = queue.shift()!
       busy = true
+      setSpeakingSentence(sentence)
       setIsSpeaking(true)
       speakText(sentence, () => {
         if (gen !== ttsGenRef.current) return
         busy = false
         if (queue.length > 0) { tryDrain(); return }
+        setSpeakingSentence('')
         if (streamDone) { setIsSpeaking(false); setAutoListenPending(true) }
       })
     }
@@ -209,9 +212,7 @@ export default function SessionPage() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0f0f0f]"><Spinner /></div>
 
-  const speakingText = isSpeaking
-    ? [...messages].reverse().find(m => m.role === 'assistant')?.content ?? ''
-    : ''
+  const speakingText = isSpeaking ? speakingSentence : ''
 
   if (sessionMode === 'audio') {
     return <AudioSession

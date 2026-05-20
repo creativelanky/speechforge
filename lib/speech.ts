@@ -120,7 +120,12 @@ export async function speak(text: string, onEnd?: () => void): Promise<void> {
     })
 
     if (!res.ok) {
-      dbg(`API error ${res.status}`)
+      try {
+        const body = await res.json()
+        dbg(`API ${res.status}: ${JSON.stringify(body).slice(0, 120)}`)
+      } catch {
+        dbg(`API error ${res.status}`)
+      }
       speakSynth(text, finish)
       return
     }
