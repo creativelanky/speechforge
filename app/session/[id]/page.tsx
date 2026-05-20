@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useSpeech } from '@/hooks/useSpeech'
-import { getAudioProgress, unlockAudio } from '@/lib/speech'
+import { getAudioProgress, unlockAudio, setTTSDebug } from '@/lib/speech'
 import { Waveform } from '@/components/session/Waveform'
 import { Microphone, MicrophoneSlash, PaperPlaneRight, SpeakerHigh, SpeakerSlash, X, Lightning } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/Spinner'
@@ -34,6 +34,7 @@ export default function SessionPage() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [autoListenPending, setAutoListenPending] = useState(false)
   const [awaitingTap, setAwaitingTap] = useState(sessionMode === 'audio')
+  const [ttsLog, setTtsLog] = useState<string[]>([])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout>(undefined)
@@ -55,6 +56,11 @@ export default function SessionPage() {
     load()
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
     return () => { clearInterval(timerRef.current); abortRef.current?.abort() }
+  }, [])
+
+  useEffect(() => {
+    setTTSDebug(msg => setTtsLog(l => [...l.slice(-6), msg]))
+    return () => setTTSDebug(null)
   }, [])
 
   useEffect(() => {
@@ -182,6 +188,7 @@ export default function SessionPage() {
       supported={supported}
       voiceEnabled={voiceEnabled}
       awaitingTap={awaitingTap}
+      ttsLog={ttsLog}
       scrollRef={scrollRef}
       onTap={() => {
         unlockAudio()
@@ -323,6 +330,7 @@ interface AudioSessionProps {
   supported: boolean | null | undefined
   voiceEnabled: boolean
   awaitingTap: boolean
+  ttsLog: string[]
   scrollRef: React.RefObject<HTMLDivElement | null>
   onTap: () => void
   onToggleVoice: () => void
@@ -355,7 +363,7 @@ function KaraokeText({ text, progress }: { text: string; progress: number }) {
   )
 }
 
-function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, isTyping, streaming, transcript, speakingText, elapsed, ending, supported, voiceEnabled, awaitingTap, scrollRef, onTap, onToggleVoice, onMic, onEnd }: AudioSessionProps) {
+function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, isTyping, streaming, transcript, speakingText, elapsed, ending, supported, voiceEnabled, awaitingTap, ttsLog, scrollRef, onTap, onToggleVoice, onMic, onEnd }: AudioSessionProps) {
   const [karaokeProgress, setKaraokeProgress] = useState(0)
   const rafRef = useRef<number>(0)
 
@@ -617,6 +625,17 @@ function AudioSession({ agentName, scenario, messages, isSpeaking, isListening, 
             <div className="h-1" />
           </div>
         </div>
+
+        {/* TTS debug overlay — remove once audio is confirmed working */}
+        {ttsLog.length > 0 && (
+          <div className="fixed bottom-32 left-3 right-3 z-[9999] rounded-xl p-3 text-left md:hidden"
+            style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(229,72,77,0.4)' }}>
+            <p className="text-[10px] font-bold text-[#E5484D] mb-1 uppercase tracking-widest">TTS Debug</p>
+            {ttsLog.map((m, i) => (
+              <p key={i} className="text-[10px] text-[#aaa] leading-relaxed font-mono">{m}</p>
+            ))}
+          </div>
+        )}
 
         {/* Mobile mic bar (hidden on md+) */}
         <div className="md:hidden flex items-center justify-center gap-5 shrink-0 py-1">

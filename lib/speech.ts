@@ -16,6 +16,11 @@ let _playerUrl: string | null = null
 
 let _synthReady = false
 
+// Debug callback — set from the session page to surface errors visually on mobile
+let _debug: ((msg: string) => void) | null = null
+export function setTTSDebug(cb: ((msg: string) => void) | null) { _debug = cb }
+function dbg(msg: string) { console.log('[tts]', msg); _debug?.(msg) }
+
 // Call SYNCHRONOUSLY at the very top of a tap/click handler, before any await
 export function unlockAudio(): void {
   if (typeof window === 'undefined') return
@@ -112,14 +117,15 @@ export async function speak(text: string, onEnd?: () => void): Promise<void> {
     })
 
     if (!res.ok) {
-      console.error('[tts] API error', res.status)
+      dbg(`API error ${res.status}`)
       speakSynth(text, finish)
       return
     }
 
     const arrayBuffer = await res.arrayBuffer()
+    dbg(`audio ${(arrayBuffer.byteLength / 1024).toFixed(1)}kb ctx=${_ctx?.state ?? 'none'} player=${!!_player} synth=${_synthReady}`)
 
-    // ── Path 1: AudioContext (best; works on iOS when properly unlocked) ──
+    // ── Path 1: AudioContext ───────────────────────────────────────────────
     if (_ctx) {
       try {
         if (_ctx.state === 'suspended') await _ctx.resume()
@@ -132,9 +138,10 @@ export async function speak(text: string, onEnd?: () => void): Promise<void> {
         src.connect(_ctx.destination)
         src.onended = () => { _ctxSource = null; finish() }
         src.start(0)
+        dbg(`playing via AudioContext (${audioBuf.duration.toFixed(1)}s)`)
         return
       } catch (e) {
-        console.warn('[tts] AudioContext failed:', e)
+        dbg(`AudioContext failed: ${e}`)
       }
     }
 
@@ -146,18 +153,20 @@ export async function speak(text: string, onEnd?: () => void): Promise<void> {
         _playerUrl = url
         _player.src = url
         _player.onended = () => { URL.revokeObjectURL(url); _playerUrl = null; finish() }
-        _player.onerror = () => { URL.revokeObjectURL(url); _playerUrl = null; finish() }
+        _player.onerror = (e) => { dbg(`player onerror: ${e}`); URL.revokeObjectURL(url); _playerUrl = null; finish() }
         await _player.play()
+        dbg('playing via HTMLAudioElement')
         return
       } catch (e) {
-        console.warn('[tts] HTMLAudioElement failed:', e)
+        dbg(`HTMLAudioElement failed: ${e}`)
       }
     }
 
-    // ── Path 3: browser speech synthesis (always works if synth is unlocked) ─
+    // ── Path 3: browser speech synthesis ──────────────────────────────────
+    dbg('falling back to SpeechSynthesis')
     speakSynth(text, finish)
   } catch (e) {
-    console.error('[tts] speak error:', e)
+    dbg(`speak error: ${e}`)
     speakSynth(text, finish)
   }
 }
